@@ -1,0 +1,14 @@
+# depslib dependency file v1.0
+1552844130 source:c:\users\karol\onedrive\dokumenty\code block\tree3\main.cpp
+	"BST.h"
+	<iostream>
+	<cstdlib>
+	<time.h>
+
+1552844695 c:\users\karol\onedrive\dokumenty\code block\tree3\bst.h
+	<cstddef>
+	<iostream>
+	<vector>
+	<list>
+	<string>
+

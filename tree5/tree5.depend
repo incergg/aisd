@@ -1,0 +1,13 @@
+# depslib dependency file v1.0
+1555313820 source:c:\users\karol\onedrive\dokumenty\code block\tree5\main.cpp
+	<iostream>
+	<string>
+	"avlmap.h"
+
+1555311351 c:\users\karol\onedrive\dokumenty\code block\tree5\avlmap.h
+	<functional>
+	<stdexcept>
+	<iostream>
+	<initializer_list>
+	<tuple>
+
