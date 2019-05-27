@@ -1,0 +1,259 @@
+#include <cstdint>
+#include <vector>
+#include <experimental/optional>
+#include <limits>
+#include <stack>
+#include <iostream>
+#include <algorithm>
+#include <iomanip>
+
+template <typename V, typename E>
+class Graph
+{
+
+public:
+class VerticesIterator
+{
+private:
+VerticesIterator(Graph<V, E> &graph, std::size_t current_vertex_id = 0u){
+    alfa = graph.Vertices;
+    pos = current_vertex_id;
+    select = graph.Vertices[current_vertex_id];
+    G = graph;
+}
+
+public:
+// ...
+
+friend class Graph<V, E>;
+
+private:
+std::vector<V> alfa;
+int pos;
+V select;
+Graph<V,E> G;
+
+public:
+bool operator==(const VerticesIterator &vi) const { if (this->select == vi.select) return true;else return false;}
+bool operator!=(const VerticesIterator &vi) const { return !(*this == vi); }
+VerticesIterator& operator++(){
+    pos++;
+    select=G.Vertices[pos];
+    VerticesIterator *B =  this;
+    return *B;
+}
+VerticesIterator operator++(int);
+V& operator*(){
+    return select;
+}
+V* operator->() const;
+};
+
+
+
+
+class EdgesIterator
+{
+private:
+EdgesIterator(Graph<V, E> &graph, std::size_t nm_row, std::size_t nm_col){
+    select = graph.Edges[nm_row][nm_col];
+    G = graph;
+    nr = nm_row;
+    nc = nm_col;
+}
+
+public:
+// ...
+
+friend class Graph<V, E>;
+
+private:
+std::vector<V> alfa;
+int nr,nc;
+E select;
+Graph<V,E> G;
+
+public:
+bool operator==(const EdgesIterator &ei) const {if (this->select == ei.select) return true;else return false;}
+bool operator!=(const EdgesIterator &ei) const { return !(*this == ei); }
+EdgesIterator& operator++(){
+    if(nc=G.nrOfVertices()) nr++;
+    else nc++;
+    select = G.Edges[nr][nc];
+    EdgesIterator *B = this;
+    return *B;
+
+}
+EdgesIterator operator++(int);
+E& operator*() {
+    return select;
+}
+E* operator->() const;
+};
+
+public:
+Graph();
+// ...
+
+private:
+std::vector<V> Vertices;
+std::vector<std::vector<E>> Edges;
+
+public:
+//VerticesIterator
+void insertVertex(const V &vertex_data);
+//std::pair<EdgesIterator, bool>
+void insertEdge(std::size_t vertex1_id, std::size_t vertex2_id, const E &label = E(), bool replace = true);
+bool removeVertex(std::size_t vertex_id);
+bool removeEdge(std::size_t vertex1_id, std::size_t vertex2_id);
+bool edgeExist(std::size_t vertex1_id, std::size_t vertex2_id) const;
+std::size_t nrOfVertices() const;
+std::size_t nrOfEdges() const;
+void printNeighborhoodMatrix() const;
+VerticesIterator vertex(std::size_t vertex_id);
+EdgesIterator edge(std::size_t vertex1_id, std::size_t vertex2_id);
+VerticesIterator begin() { return beginVertices(); }
+VerticesIterator end() { return endVertices(); }
+VerticesIterator beginVertices(){
+    VerticesIterator A(*this, 0u);
+    return A;
+}
+VerticesIterator endVertices(){
+    VerticesIterator A(*this, nrOfVertices());
+    return A;
+}
+EdgesIterator beginEdges(){
+    EdgesIterator A(*this, 0u, 0u);
+    return A;
+}
+EdgesIterator endEdges(){
+    EdgesIterator A( *this, nrOfVertices(), nrOfVertices());
+    return A;
+}
+};
+
+
+template<typename V, typename E>
+Graph<V,E>::Graph(){
+
+}
+template<typename V, typename E>
+void Graph<V,E>::insertVertex(const V &vertex_data){
+    Vertices.push_back(vertex_data);
+    Edges.resize(nrOfVertices());
+    for(std::size_t i=0; i<nrOfVertices();i++){
+        Edges[i].resize(nrOfVertices());
+    }
+
+}
+
+template<typename V, typename E>
+void Graph<V,E>::insertEdge(std::size_t vertex1_id, std::size_t vertex2_id, const E &label, bool replace){
+    Edges[vertex1_id][vertex2_id] = label;
+}
+
+template<typename V, typename E>
+std::size_t Graph<V,E>::nrOfVertices() const{
+    return Vertices.size();
+}
+template<typename V, typename E>
+std::size_t Graph<V,E>::nrOfEdges() const{
+    std::size_t suma=0;
+    for(std::size_t i=0;i<nrOfVertices();i++){
+        for(std::size_t j=0;j<nrOfVertices();j++){
+            if( Edges[i][j] != 0){
+                suma++;
+            }
+        }
+    }
+    return suma;
+}
+
+template<typename V, typename E>
+bool Graph<V,E>::removeVertex(std::size_t vertex_id){
+    if(vertex_id < nrOfVertices()){
+        for(std::size_t i = 0; i<nrOfVertices();i++){
+            for (std::size_t j=vertex_id; j<nrOfVertices()-1;j++){
+                Edges[i][j] = Edges[i][j+1];
+            }
+            Edges[i].resize(nrOfVertices()-1);
+        }
+        for(std::size_t i=vertex_id; i<nrOfVertices()-1;i++){
+            for(std::size_t j = 0; j<nrOfVertices();j++){
+                Edges[i][j] = Edges[i+1][j];
+            }
+        }
+        Edges.resize(nrOfVertices()-1);
+        for(std::size_t i = vertex_id; i<nrOfVertices()-1;i++){
+                Vertices[i] = Vertices[i+1];
+        }
+            Vertices.pop_back();
+        return true;
+    }
+    else return false;
+}
+
+template<typename V, typename E>
+bool Graph<V,E>::removeEdge(std::size_t vertex1_id, std::size_t vertex2_id){
+    if(vertex1_id < nrOfVertices() && vertex2_id < nrOfVertices()){
+        if(Edges[vertex1_id][vertex2_id] != 0){
+            Edges[vertex1_id][vertex2_id] = 0;
+                return true;
+        }
+    }
+return false;
+}
+
+template<typename V, typename E>
+void Graph<V,E>::printNeighborhoodMatrix() const{
+    for(std::size_t i=0; i<Edges.size();i++){
+        for(std::size_t j=0; j<Edges[i].size();j++){
+            std::cout << std::left << std::setw(4) << Edges[i][j] << " ";
+        }
+        std::cout<< std::endl;
+    }
+}
+
+
+
+
+
+int main() {
+Graph<std::string,double> g;
+
+for(std::size_t i = 0u; i < 6u; ++i)
+{
+    g.insertVertex("data " + std::to_string(i));
+}
+
+for(std::size_t i = 0u; i < g.nrOfVertices(); ++i){
+    for(std::size_t j = 0u; j < g.nrOfVertices(); ++j){
+        if((i + j) & 1u || i & 1u){
+            g.insertEdge(i, j, ((i != j) ? (i+j)/2. : 1.));
+        }
+    }
+}
+g.insertEdge(0, 2, 4.);
+std::cout << (g.removeVertex(1) ? "Udalo sie" : "Nie udalo sie") << std::endl;
+std::cout << (g.removeEdge(2, 2) ? "Udalo sie" : "Nie udalo sie") << std::endl;
+std::cout << (g.removeEdge(2, 3) ? "Udalo sie" : "Nie udalo sie") << std::endl;
+std::cout << (g.removeEdge(4, 3) ? "Udalo sie" : "Nie udalo sie") << std::endl;
+std::cout << "Nr of vertices: " << g.nrOfVertices() << std::endl;
+std::cout << "Nr of edges: " << g.nrOfEdges() << std::endl;
+std::cout << std::endl;
+
+g.printNeighborhoodMatrix();
+std::cout << std::endl;
+std::cout << "Vertices data:" << std::endl;
+for(auto v_it = g.beginVertices(); v_it != g.endVertices(); ++v_it)
+{
+    std::cout << *v_it << ", ";
+}
+std::cout << std::endl << std::endl;
+std::cout << "Edges data:" << std::endl;
+for(auto e_it = g.beginEdges(); e_it != g.endEdges(); ++e_it)
+{
+std::cout << *e_it << ", ";
+}
+return 0;
+}
