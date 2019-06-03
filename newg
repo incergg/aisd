@@ -1,0 +1,450 @@
+#include <cstdint>
+#include <vector>
+#include <experimental/optional>
+#include <limits>
+#include <stack>
+#include <iostream>
+#include <algorithm>
+#include <iomanip>
+#include <queue>
+#include <stack>
+
+
+template <typename V, typename E>
+class Graph
+{
+
+public:
+class VerticesIterator
+{
+private:
+VerticesIterator(Graph<V, E> &graph, std::size_t current_vertex_id = 0u){
+    alfa = graph.Vertices;
+    pos = current_vertex_id;
+    select = graph.Vertices[current_vertex_id];
+    G = graph;
+}
+
+public:
+// ...
+
+friend class Graph<V, E>;
+
+private:
+std::vector<V> alfa;
+int pos;
+V select;
+Graph<V,E> G;
+
+public:
+bool operator==(const VerticesIterator &vi) const { if (this->select == vi.select) return true;else return false;}
+bool operator!=(const VerticesIterator &vi) const { return !(*this == vi); }
+VerticesIterator& operator++(){
+    pos++;
+    select=G.Vertices[pos];
+    VerticesIterator *B =  this;
+    return *B;
+}
+VerticesIterator operator++(int);
+V& operator*(){
+    return select;
+}
+V* operator->() const;
+};
+
+
+
+
+class EdgesIterator
+{
+private:
+EdgesIterator(Graph<V, E> &graph, std::size_t nm_row, std::size_t nm_col){
+    select = graph.Edges[nm_row][nm_col];
+    while (select == 0) {
+                if(nm_col == graph.nrOfVertices()-1) nm_row++;
+                else nm_col++;
+                select = graph.Edges[nm_row][nm_col];
+    }
+
+    G = graph;
+    nr = nm_row;
+    nc = nm_col;
+}
+
+public:
+// ...
+
+friend class Graph<V, E>;
+
+private:
+std::vector<V> alfa;
+int nr,nc;
+E select;
+Graph<V,E> G;
+
+public:
+bool operator==(const EdgesIterator &ei) const {if (this->select == ei.select) return true;else return false;}
+bool operator!=(const EdgesIterator &ei) const { return !(*this == ei); }
+EdgesIterator& operator++(){
+    if(nc==G.nrOfVertices()-1) {nr++;nc=0;}
+    else nc++;
+
+    while (G.Edges[nr][nc] == 0){
+        if(nc==G.nrOfVertices()-1) {nr++;nc=0;}
+        else nc++;
+    }
+     select = G.Edges[nr][nc];
+    //std::cout << "row " <<nr << "col " << nc << "select: " << select << std::endl;
+    EdgesIterator *B = this;
+    return *B;
+
+}
+EdgesIterator operator++(int);
+E& operator*() {
+    return select;
+}
+E* operator->() const;
+};
+
+class DFS{
+public:
+    DFS(Graph<V, E> &graph, std::size_t vertex_id, bool flag = false){
+            visited.assign(graph.nrOfVertices(), false);
+            G = graph;
+
+            current = vertex_id;
+            visited[vertex_id] = true;
+            select = graph.Vertices[vertex_id];
+    }
+
+
+    std::vector<bool> visited;
+    Graph<V,E> G;
+    std::size_t current;
+    std::stack<std::size_t> stos;
+    V select;
+    bool flag = true;
+
+
+
+    friend class Graph<V,E>;
+
+public:
+    bool operator==(const DFS &vi) const{if (this->select == vi.select) return true;else return false;}
+    bool operator!=(const DFS &vi) const { return !(*this == vi); }
+    DFS& operator++() {
+        while(flag){
+        for(size_t i = 0; i<G.nrOfVertices(); i++){
+            if(G.Edges[current][i] != 0 && visited[i] == false){
+                stos.push(i);
+                //std::cout << std::endl << " PUSH TO STACK: " << i <<  std::endl;
+            }
+        }
+        if(!stos.empty() ){
+            while(visited[stos.top()] == true && !stos.empty()){stos.pop();}
+
+            std::size_t temp = stos.top();
+            stos.pop();
+            visited[temp] = true;
+            current = temp;
+            select = G.Vertices[current];
+        }
+        else flag = false;
+/*
+        std::cout << std::endl << " VISITED: ";
+         for (auto x: visited){
+                std::cout << x << ", ";
+            }*/
+
+
+
+
+
+
+        return *this;
+    }
+    }
+    DFS& operator++(int);
+    V& operator*() {
+     return select;
+     }
+    V* operator->() const;
+
+};
+
+class BFS{
+public:
+    std::vector<bool> visited;
+    std::size_t pos;
+    Graph<V,E> G;
+    std::size_t current;
+    std::queue<std::size_t> kolejka;
+    V select;
+    bool flag = true;
+    BFS(Graph<V,E> &graph, std::size_t vertex_id){
+            visited.assign(graph.nrOfVertices(), false);
+            G = graph;
+
+            current = vertex_id;
+            visited[vertex_id] = true;
+            select = graph.Vertices[vertex_id];
+
+    }
+
+
+
+public:
+    friend class Graph<V,E>;
+
+public:
+    bool operator==(const VerticesIterator &vi) const;
+    bool operator!=(const VerticesIterator &vi) const { return !(*this == vi); }
+    BFS& operator++(){
+
+            while(flag){
+        for(size_t i = 0; i<G.nrOfVertices(); i++){
+            if(G.Edges[current][i] != 0 && visited[i] == false){
+                kolejka.push(i);
+            }
+        }
+        if(!kolejka.empty() ){
+            while(visited[kolejka.front()] == true && !kolejka.empty()){kolejka.pop();}
+
+            std::size_t temp = kolejka.front();
+            kolejka.pop();
+            visited[temp] = true;
+            current = temp;
+            select = G.Vertices[current];
+        }
+        else {
+                flag = false;
+
+        }
+    //std::cout << std::endl << " used ++  select: " << select << std::endl;
+
+
+
+
+
+
+        return *this;
+            }
+
+
+    }
+    BFS operator++(int);
+    V& operator*() {
+        return select;
+    }
+    V* operator->() const;
+
+};
+
+public:
+Graph();
+// ...
+
+private:
+std::vector<V> Vertices;
+std::vector<std::vector<E>> Edges;
+
+public:
+//VerticesIterator
+void insertVertex(const V &vertex_data);
+//std::pair<EdgesIterator, bool>
+void insertEdge(std::size_t vertex1_id, std::size_t vertex2_id, const E &label = E(), bool replace = true);
+bool removeVertex(std::size_t vertex_id);
+bool removeEdge(std::size_t vertex1_id, std::size_t vertex2_id);
+bool edgeExist(std::size_t vertex1_id, std::size_t vertex2_id) const;
+std::size_t nrOfVertices() const;
+std::size_t nrOfEdges() const;
+void printNeighborhoodMatrix() const;
+VerticesIterator vertex(std::size_t vertex_id);
+EdgesIterator edge(std::size_t vertex1_id, std::size_t vertex2_id);
+VerticesIterator begin() { return beginVertices(); }
+VerticesIterator end() { return endVertices(); }
+
+DFS beginDFS() { DFS A(*this,0u);return A;}
+DFS endDFS() { DFS A(*this, nrOfVertices(), true); return A;}
+
+BFS beginBFS() { BFS A(*this,0u);return A;}
+BFS endBFS() { BFS A(*this, nrOfVertices(), true); return A;}
+
+VerticesIterator beginVertices(){
+    VerticesIterator A(*this, 0u);
+    return A;
+}
+VerticesIterator endVertices(){
+    VerticesIterator A(*this, nrOfVertices());
+    return A;
+}
+EdgesIterator beginEdges(){
+    EdgesIterator A(*this, 0u, 0u);
+    return A;
+}
+EdgesIterator endEdges(){
+    EdgesIterator A( *this, nrOfVertices(), nrOfVertices());
+    return A;
+}
+std::size_t dijkstra(std::size_t vertex1_id, std::size_t vertex2_id);
+};
+
+
+template<typename V, typename E>
+Graph<V,E>::Graph(){
+
+}
+template<typename V, typename E>
+void Graph<V,E>::insertVertex(const V &vertex_data){
+    Vertices.push_back(vertex_data);
+    Edges.resize(nrOfVertices());
+    for(std::size_t i=0; i<nrOfVertices();i++){
+        Edges[i].resize(nrOfVertices());
+    }
+
+}
+
+template<typename V, typename E>
+void Graph<V,E>::insertEdge(std::size_t vertex1_id, std::size_t vertex2_id, const E &label, bool replace){
+    Edges[vertex1_id][vertex2_id] = label;
+}
+
+template<typename V, typename E>
+std::size_t Graph<V,E>::nrOfVertices() const{
+    return Vertices.size();
+}
+template<typename V, typename E>
+std::size_t Graph<V,E>::nrOfEdges() const{
+    std::size_t suma=0;
+    for(std::size_t i=0;i<nrOfVertices();i++){
+        for(std::size_t j=0;j<nrOfVertices();j++){
+            if( Edges[i][j] != 0){
+                suma++;
+            }
+        }
+    }
+    return suma;
+}
+
+template<typename V, typename E>
+bool Graph<V,E>::removeVertex(std::size_t vertex_id){
+    if(vertex_id < nrOfVertices()){
+        for(std::size_t i = 0; i<nrOfVertices();i++){
+            for (std::size_t j=vertex_id; j<nrOfVertices()-1;j++){
+                Edges[i][j] = Edges[i][j+1];
+            }
+            Edges[i].resize(nrOfVertices()-1);
+        }
+        for(std::size_t i=vertex_id; i<nrOfVertices()-1;i++){
+            for(std::size_t j = 0; j<nrOfVertices();j++){
+                Edges[i][j] = Edges[i+1][j];
+            }
+        }
+        Edges.resize(nrOfVertices()-1);
+        for(std::size_t i = vertex_id; i<nrOfVertices()-1;i++){
+                Vertices[i] = Vertices[i+1];
+        }
+            Vertices.pop_back();
+        return true;
+    }
+    else return false;
+}
+
+template<typename V, typename E>
+bool Graph<V,E>::removeEdge(std::size_t vertex1_id, std::size_t vertex2_id){
+    if(vertex1_id < nrOfVertices() && vertex2_id < nrOfVertices()){
+        if(Edges[vertex1_id][vertex2_id] != 0){
+            Edges[vertex1_id][vertex2_id] = 0;
+                return true;
+        }
+    }
+return false;
+}
+
+template<typename V, typename E>
+void Graph<V,E>::printNeighborhoodMatrix() const{
+    for(std::size_t i=0; i<Edges.size();i++){
+        for(std::size_t j=0; j<Edges[i].size();j++){
+            std::cout << std::left << std::setw(4) << Edges[i][j] << " ";
+        }
+        std::cout<< std::endl;
+    }
+}
+
+template<typename V, typename E>
+std::size_t Graph<V,E>::dijkstra(std::size_t vertex1_id, std::size_t vertex2_id){
+std::vector<std::size_t> S;
+std::vector<std::size_t> Q;
+
+
+
+}
+
+
+
+
+int main() {
+Graph<std::string,double> g;
+
+for(std::size_t i = 0u; i < 6u; ++i)
+{
+    g.insertVertex("data " + std::to_string(i));
+}
+
+for(std::size_t i = 0u; i < g.nrOfVertices(); ++i){
+    for(std::size_t j = 0u; j < g.nrOfVertices(); ++j){
+        if((i + j) & 1u || i & 1u){
+            g.insertEdge(i, j, ((i != j) ? (i+j)/2. : 1.));
+        }
+    }
+}
+g.insertEdge(0, 2, 4.);
+std::cout << (g.removeVertex(1) ? "Udalo sie" : "Nie udalo sie") << std::endl;
+std::cout << (g.removeEdge(2, 2) ? "Udalo sie" : "Nie udalo sie") << std::endl;
+std::cout << (g.removeEdge(2, 3) ? "Udalo sie" : "Nie udalo sie") << std::endl;
+std::cout << (g.removeEdge(4, 3) ? "Udalo sie" : "Nie udalo sie") << std::endl;
+std::cout << "Nr of vertices: " << g.nrOfVertices() << std::endl;
+std::cout << "Nr of edges: " << g.nrOfEdges() << std::endl;
+std::cout << std::endl;
+
+g.printNeighborhoodMatrix();
+std::cout << std::endl;
+std::cout << "Vertices data:" << std::endl;
+for(auto v_it = g.beginVertices(); v_it != g.endVertices(); ++v_it)
+{
+    std::cout << *v_it << ", ";
+}
+auto i_it = g.endVertices();
+
+std::cout << *i_it <<", " << std::endl;
+
+std::cout << std::endl << std::endl;
+std::cout << "Edges data:" << std::endl;
+for(auto e_it = g.beginEdges(); e_it != g.endEdges(); ++e_it)
+{
+std::cout << *e_it << ", ";
+}
+auto e_it = g.endEdges();
+
+std::cout << *e_it <<", " << std::endl;
+
+
+
+/*std::cout << "BFS PRINT:   " << std::endl;
+auto b_it = g.beginBFS();
+while(b_it.flag == true){
+    std::cout << *b_it << ", " ;
+    ++b_it;
+
+
+}
+*/
+std::cout << "DFS PRINT:   " << std::endl;
+auto d_it = g.beginDFS();
+while(d_it.flag == true){
+    std::cout << *d_it << ", " ;
+    ++d_it;
+}
+
+return 0;
+}
